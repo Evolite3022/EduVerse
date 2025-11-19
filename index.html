@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Village Quiz Adventure (localStorage)</title>
+
+  <!-- React + Babel + Tailwind (Dev) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    html,body,#root { height:100%; }
+    body {
+            box-sizing: border-box;
+        }
+        
+        .village-background {
+            background: linear-gradient(180deg, #87CEEB 0%, #87CEEB 40%, #98D8C8 60%, #7CB342 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .village-background::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 45%;
+            background: 
+                radial-gradient(ellipse 80px 40px at 20% 100%, #6B8E23 0%, transparent 50%),
+                radial-gradient(ellipse 60px 30px at 35% 100%, #7CB342 0%, transparent 50%),
+                radial-gradient(ellipse 100px 50px at 55% 100%, #558B2F 0%, transparent 50%),
+                radial-gradient(ellipse 70px 35px at 75% 100%, #689F38 0%, transparent 50%),
+                radial-gradient(ellipse 90px 45px at 90% 100%, #6B8E23 0%, transparent 50%),
+                repeating-linear-gradient(
+                    90deg,
+                    #7CB342 0px,
+                    #7CB342 30px,
+                    #8BC34A 30px,
+                    #8BC34A 60px
+                );
+            opacity: 0.7;
+        }
+        
+        .village-background::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: 
+                radial-gradient(ellipse 150px 50px at 15% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
+                radial-gradient(ellipse 200px 60px at 40% 60%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
+                radial-gradient(ellipse 180px 55px at 70% 55%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
+                radial-gradient(ellipse 120px 45px at 90% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .game-world {
+            background: linear-gradient(180deg, #87CEEB 0%, #87CEEB 40%, #98D8C8 60%, #7CB342 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-world::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 45%;
+            background: 
+                radial-gradient(ellipse 80px 40px at 20% 100%, #6B8E23 0%, transparent 50%),
+                radial-gradient(ellipse 60px 30px at 35% 100%, #7CB342 0%, transparent 50%),
+                radial-gradient(ellipse 100px 50px at 55% 100%, #558B2F 0%, transparent 50%),
+                radial-gradient(ellipse 70px 35px at 75% 100%, #689F38 0%, transparent 50%),
+                radial-gradient(ellipse 90px 45px at 90% 100%, #6B8E23 0%, transparent 50%),
+                repeating-linear-gradient(
+                    90deg,
+                    #7CB342 0px,
+                    #7CB342 30px,
+                    #8BC34A 30px,
+                    #8BC34A 60px
+                );
+            opacity: 0.7;
+        }
+        
+        .game-world::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: 
+                radial-gradient(ellipse 150px 50px at 15% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
+                radial-gradient(ellipse 200px 60px at 40% 60%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
+                radial-gradient(ellipse 180px 55px at 70% 55%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
+                radial-gradient(ellipse 120px 45px at 90% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 50%);
+            pointer-events: none;
+        }
+    .character-sprite { position:absolute; z-index:20; pointer-events:none; }
+    .character-sprite-container{ position:relative; width:64px; height:64px; display:flex; align-items:flex-end; justify-content:center; }
+    .character-sprite img{ width:48px; height:48px; image-rendering:pixelated; filter:drop-shadow(2px 2px 4px rgba(0,0,0,0.3)); }
+    .character-shadow{ position:absolute; bottom:2px; left:50%; transform:translateX(-50%); width:36px; height:8px; background:radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 50%, transparent 100%); border-radius:50%; z-index:-1; }
+    .house-zone{ transition:all .3s ease; filter:drop-shadow(2px 2px 8px rgba(0,0,0,0.2)); }
+    .house-zone.active{ transform:scale(1.08); filter:drop-shadow(0 0 20px rgba(59,130,246,0.6)); animation:pulse-glow 1.5s infinite; }
+    @keyframes pulse-glow { 0%,100%{filter:drop-shadow(0 0 20px rgba(59,130,246,0.6));} 50%{filter:drop-shadow(0 0 30px rgba(59,130,246,1));} }
+    .floating-ui { backdrop-filter: blur(6px); background: rgba(255,255,255,0.95); border:1px solid rgba(255,255,255,0.2); box-shadow:0 8px 24px rgba(0,0,0,0.08); }
+    .bounce-animation { animation:bounce 2s infinite; }
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    .answer-correct{ animation:correctAnswer .6s ease; }
+    .answer-wrong{ animation:wrongAnswer .6s ease; }
+    @keyframes correctAnswer {0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+    @keyframes wrongAnswer {0%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}100%{transform:translateX(0)}}
+  </style>
+</head>
+<body class="h-full">
+  <div id="root" class="h-full"></div>
+
+  <script type="text/babel">
+  const { useState, useEffect, useRef } = React;
+
+  /* ===========================
+     localStorage helpers
+     =========================== */
+  function loadLocalUsers() {
+    try { return JSON.parse(localStorage.getItem('registered_users') || '[]'); }
+    catch(e){ return []; }
+  }
+  function saveLocalUsers(users) {
+    localStorage.setItem('registered_users', JSON.stringify(users));
+  }
+  function loadScores() {
+    try { return JSON.parse(localStorage.getItem('quiz_scores') || '[]'); }
+    catch(e){ return []; }
+  }
+  function saveScores(scores) {
+    localStorage.setItem('quiz_scores', JSON.stringify(scores));
+  }
+  function resetAllData() {
+    localStorage.removeItem('registered_users');
+    localStorage.removeItem('quiz_scores');
+    location.reload();
+  }
+
+  /* ===========================
+     Game constants & assets
+     =========================== */
+  const defaultConfig = {
+    game_title: "Village Quiz Adventure",
+    welcome_message: "Selamat datang di petualangan desa!"
+  };
+
+  const AVATAR_SYSTEM = {
+            avatars: {
+                student: {
+                    name: "Pelajar",
+                    description: "Avatar dasar",
+                    requiredScore: 0,
+                    base: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="transparent"/><circle cx="16" cy="10" r="5" fill="%23fbbf24" stroke="%23000" stroke-width="1.5"/><rect x="13" y="15" width="6" height="8" fill="%233b82f6" stroke="%23000" stroke-width="1.5"/><rect x="11" y="23" width="3" height="4" fill="%236b7280" stroke="%23000" stroke-width="1"/><rect x="18" y="23" width="3" height="4" fill="%236b7280" stroke="%23000" stroke-width="1"/><circle cx="14" cy="8" r="1.5" fill="%23000"/><circle cx="18" cy="8" r="1.5" fill="%23000"/></svg>'
+                },
+                scholar: {
+                    name: "Sarjana",
+                    description: "Skor 500+",
+                    requiredScore: 500,
+                    base: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="transparent"/><circle cx="16" cy="10" r="5" fill="%23f59e0b" stroke="%23000" stroke-width="1.5"/><rect x="13" y="15" width="6" height="8" fill="%2316a34a" stroke="%23000" stroke-width="1.5"/><rect x="11" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><rect x="18" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><circle cx="14" cy="8" r="1.5" fill="%23000"/><circle cx="18" cy="8" r="1.5" fill="%23000"/><rect x="10" y="4" width="12" height="3" fill="%23000" rx="1.5"/></svg>'
+                },
+                wizard: {
+                    name: "Penyihir",
+                    description: "Skor 1000+",
+                    requiredScore: 1000,
+                    base: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="transparent"/><circle cx="16" cy="10" r="5" fill="%23fbbf24" stroke="%23000" stroke-width="1.5"/><rect x="13" y="15" width="6" height="8" fill="%238b5cf6" stroke="%23000" stroke-width="1.5"/><rect x="11" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><rect x="18" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><circle cx="14" cy="8" r="1.5" fill="%23000"/><circle cx="18" cy="8" r="1.5" fill="%23000"/><polygon points="16,2 12,12 20,12" fill="%238b5cf6" stroke="%23000" stroke-width="1"/></svg>'
+                },
+                knight: {
+                    name: "Kesatria",
+                    description: "Skor 1500+",
+                    requiredScore: 1500,
+                    base: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="transparent"/><circle cx="16" cy="10" r="5" fill="%23fbbf24" stroke="%23000" stroke-width="1.5"/><rect x="13" y="15" width="6" height="8" fill="%236b7280" stroke="%23000" stroke-width="1.5"/><rect x="11" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><rect x="18" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><circle cx="14" cy="8" r="1.5" fill="%23000"/><circle cx="18" cy="8" r="1.5" fill="%23000"/><rect x="10" y="4" width="12" height="6" fill="%236b7280" stroke="%23000" stroke-width="1" rx="2"/></svg>'
+                },
+                master: {
+                    name: "Guru Besar",
+                    description: "Skor 2000+",
+                    requiredScore: 2000,
+                    base: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="transparent"/><circle cx="16" cy="10" r="5" fill="%23fbbf24" stroke="%23000" stroke-width="1.5"/><rect x="13" y="15" width="6" height="8" fill="%23dc2626" stroke="%23000" stroke-width="1.5"/><rect x="11" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><rect x="18" y="23" width="3" height="4" fill="%236b4423" stroke="%23000" stroke-width="1"/><circle cx="14" cy="8" r="1.5" fill="%23000"/><circle cx="18" cy="8" r="1.5" fill="%23000"/><polygon points="6,12 10,6 16,8 22,6 26,12 26,16 6,16" fill="%23fbbf24" stroke="%23000" stroke-width="1"/></svg>'
+                }
+            }
+        };
+
+  const ASSETS = {
+    houses: {
+      house1: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="45" ry="8" fill="%23000" opacity="0.18"/><polygon points="50,15 12,42 88,42" fill="%23dc2626"/><rect x="15" y="42" width="70" height="43" fill="%23d4d4d4"/><rect x="28" y="52" width="16" height="28" fill="%236b4423"/></svg>',
+      house2: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="45" ry="8" fill="%23000" opacity="0.18"/><polygon points="50,15 12,42 88,42" fill="%2316a34a"/><rect x="15" y="42" width="70" height="43" fill="%23fef3c7"/><rect x="28" y="52" width="16" height="28" fill="%238b4513"/></svg>',
+      house3: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="45" ry="8" fill="%23000" opacity="0.18"/><polygon points="50,15 12,42 88,42" fill="%232563eb"/><rect x="15" y="42" width="70" height="43" fill="%23fef3c7"/><rect x="28" y="52" width="16" height="28" fill="%236b4423"/></svg>',
+      house4: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="45" ry="8" fill="%23000" opacity="0.18"/><polygon points="50,15 12,42 88,42" fill="%23a855f7"/><rect x="15" y="42" width="70" height="43" fill="%23ffffff"/><rect x="28" y="52" width="16" height="28" fill="%236b4423"/></svg>',
+      house5: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="45" ry="8" fill="%23000" opacity="0.18"/><polygon points="50,15 12,42 88,42" fill="%23ea580c"/><rect x="15" y="42" width="70" height="43" fill="%2310b981"/><rect x="28" y="52" width="16" height="28" fill="%236b4423"/></svg>'
+    }
+  };
+
+  const QUIZ_DATABASE = {
+    matematika: [
+      { question: "Berapa hasil dari 15 + 27?", options: ["42","41","43","40"], correct:0 },
+      { question: "Berapa hasil dari 8 × 9?", options: ["71","72","73","74"], correct:1 },
+      { question: "Berapa hasil dari 144 ÷ 12?", options: ["11","12","13","14"], correct:1 },
+      { question: "Berapa hasil dari 25²?", options: ["525","625","725","825"], correct:1 },
+      { question: "Berapa hasil dari √81?", options: ["8","9","10","11"], correct:1 }
+    ],
+    sains: [
+      { question: "Planet terdekat dengan Matahari adalah?", options:["Venus","Merkurius","Mars","Bumi"], correct:1 },
+      { question: "Rumus kimia air adalah?", options:["H2O","CO2","NaCl","O2"], correct:0 },
+      { question: "Organ yang memompa darah adalah?", options:["Paru-paru","Hati","Jantung","Ginjal"], correct:2 }
+    ],
+    sejarah: [
+      { question: "Proklamasi dibacakan tanggal?", options:["16 Agustus 1945","17 Agustus 1945","18 Agustus 1945","19 Agustus 1945"], correct:1 },
+      { question: "Presiden pertama RI adalah?", options:["Soekarno","Soeharto","Habibie","Megawati"], correct:0 }
+    ],
+    bahasa: [
+      { question: "Sinonim 'cerdas'?", options:["Bodoh","Pintar","Malas","Lambat"], correct:1 },
+      { question: "Antonim 'gelap'?", options:["Hitam","Suram","Terang","Buram"], correct:2 }
+    ],
+    umum: [
+      { question: "Ibu kota Indonesia adalah?", options:["Jakarta","Bandung","Surabaya","Medan"], correct:0 },
+      { question: "Benua terbesar adalah?", options:["Afrika","Asia","Amerika","Eropa"], correct:1 }
+    ]
+  };
+
+  const HOUSE_ZONES = [
+    { id:1, x:15, y:20, category:'matematika', name:'Rumah Matematika', house:'house1' },
+    { id:2, x:75, y:25, category:'sains', name:'Rumah Sains', house:'house2' },
+    { id:3, x:20, y:70, category:'sejarah', name:'Rumah Sejarah', house:'house3' },
+    { id:4, x:70, y:75, category:'bahasa', name:'Rumah Bahasa', house:'house4' },
+    { id:5, x:45, y:45, category:'umum', name:'Rumah Pengetahuan Umum', house:'house5' }
+  ];
+
+  /* ===========================
+     Main App
+     =========================== */
+  function VillageQuizGame(){
+    const [isLoading, setIsLoading] = useState(true);
+    const [currentScene, setCurrentScene] = useState('login');
+    const [playerData, setPlayerData] = useState({ nis:'', name:'', class:'', school:'', password:'' });
+    const [gameData, setGameData] = useState(loadScores());
+    const [registeredUsers, setRegisteredUsers] = useState(loadLocalUsers());
+    const [config, setConfig] = useState(defaultConfig);
+
+    const [loginNis, setLoginNis] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [registerData, setRegisterData] = useState({ nis:'', name:'', class:'', school:'', password:'', confirmPassword:'' });
+    const [showRegister, setShowRegister] = useState(false);
+    const [loginError, setLoginError] = useState('');
+    const [registerError, setRegisterError] = useState('');
+
+    const [playerPosition, setPlayerPosition] = useState({ x:50, y:50 });
+    const [pressedKeys, setPressedKeys] = useState(new Set());
+    const [nearHouse, setNearHouse] = useState(null);
+
+    const [selectedAvatar, setSelectedAvatar] = useState('student');
+    const [unlockedAvatars, setUnlockedAvatars] = useState(['student']);
+    const [currentQuiz, setCurrentQuiz] = useState(null);
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+    const [score, setScore] = useState(0);
+    const [totalScore, setTotalScore] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(30);
+    const [quizTimer, setQuizTimer] = useState(null);
+    const [showResult, setShowResult] = useState(false);
+    const [lastAnswer, setLastAnswer] = useState(null);
+
+    useEffect(() => {
+      // small loader
+      const t = setTimeout(()=> setIsLoading(false), 80);
+      return ()=>clearTimeout(t);
+    },[]);
+
+    // keep unlocked avatars in sync when totalScore changes
+    useEffect(() => {
+      const unlocked = ['student'];
+      Object.entries(AVATAR_SYSTEM.avatars).forEach(([key, data]) => {
+        if ((totalScore || 0) >= data.requiredScore) unlocked.push(key);
+      });
+      setUnlockedAvatars(unlocked);
+    }, [totalScore]);
+
+    // movement loop
+    useEffect(() => {
+      if (currentScene !== 'world') return;
+      if (pressedKeys.size === 0) return;
+      const step = 1.5;
+      const interval = setInterval(() => {
+        setPlayerPosition(prev => {
+          let dx = 0, dy = 0;
+          if (pressedKeys.has('up')) dy -= step;
+          if (pressedKeys.has('down')) dy += step;
+          if (pressedKeys.has('left')) dx -= step;
+          if (pressedKeys.has('right')) dx += step;
+          const nx = Math.max(5, Math.min(95, prev.x + dx));
+          const ny = Math.max(5, Math.min(95, prev.y + dy));
+          return { x: nx, y: ny };
+        });
+      }, 16);
+      return ()=>clearInterval(interval);
+    }, [pressedKeys, currentScene]);
+
+    // proximity check
+    useEffect(() => {
+      let closest = null; let minD = Infinity;
+      HOUSE_ZONES.forEach(h => {
+        const d = Math.hypot(playerPosition.x - h.x, playerPosition.y - h.y);
+        if (d < 8 && d < minD) { minD = d; closest = h; }
+      });
+      setNearHouse(closest);
+    }, [playerPosition]);
+
+    // keyboard handlers
+    useEffect(() => {
+      const keyMap = { w:'up', W:'up', ArrowUp:'up', s:'down', S:'down', ArrowDown:'down', a:'left', A:'left', ArrowLeft:'left', d:'right', D:'right', ArrowRight:'right' };
+      const onDown = (e) => {
+        if (currentScene !== 'world') return;
+        if (keyMap[e.key]) { e.preventDefault(); setPressedKeys(prev => new Set([...prev, keyMap[e.key]])); }
+        if (e.key === 'Enter' && nearHouse) startQuiz(nearHouse.category);
+      };
+      const onUp = (e) => {
+        if (currentScene !== 'world') return;
+        if (keyMap[e.key]) { e.preventDefault(); setPressedKeys(prev => { const s = new Set(prev); s.delete(keyMap[e.key]); return s; }); }
+      };
+      window.addEventListener('keydown', onDown);
+      window.addEventListener('keyup', onUp);
+      return ()=>{ window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
+    }, [currentScene, nearHouse]);
+
+    /* --------- Authentication (localStorage) ---------- */
+    const handleRegister = (e) => {
+      e?.preventDefault();
+      setRegisterError('');
+      const d = registerData;
+      if (!d.nis || !d.name || !d.class || !d.school || !d.password || !d.confirmPassword) { setRegisterError('Semua field harus diisi!'); return; }
+      if (d.nis.length !== 4 || !/^\d+$/.test(d.nis)) { setRegisterError('NIS harus 4 digit angka!'); return; }
+      if (d.password.length < 6) { setRegisterError('Password minimal 6 karakter!'); return; }
+      if (d.password !== d.confirmPassword) { setRegisterError('Password tidak sama!'); return; }
+      const existingUser = registeredUsers.find(u=>u.nis===d.nis);
+      if (existingUser) { setRegisterError('NIS sudah terdaftar!'); return; }
+
+      const newUser = { is_user:true, nis:d.nis, name:d.name, class:d.class, school:d.school, password:d.password, created_at: new Date().toISOString() };
+      const updated = [...registeredUsers, newUser];
+      saveLocalUsers(updated);
+      setRegisteredUsers(updated);
+
+      setPlayerData({ nis:d.nis, name:d.name, class:d.class, school:d.school, password:d.password });
+      setTotalScore(0);
+      setCurrentScene('home');
+      setShowRegister(false);
+      // reset register form
+      setRegisterData({ nis:'', name:'', class:'', school:'', password:'', confirmPassword:'' });
+    };
+
+    const handleLogin = (e) => {
+      e?.preventDefault();
+      setLoginError('');
+      if (!loginNis || !loginPassword) { setLoginError('NIS dan password harus diisi!'); return; }
+      if (loginNis.length !== 4 || !/^\d+$/.test(loginNis)) { setLoginError('NIS harus 4 digit angka!'); return; }
+      const user = registeredUsers.find(u => u.nis===loginNis && u.password===loginPassword);
+      if (!user) { setLoginError('NIS atau password salah!'); return; }
+      const existingScore = gameData.find(g => g.player_nis === loginNis);
+      setPlayerData(user);
+      setTotalScore(existingScore ? existingScore.total_score : 0);
+      setCurrentScene('home');
+      setLoginNis(''); setLoginPassword('');
+    };
+
+    /* --------- Quiz flow ---------- */
+    const startQuiz = (category) => {
+      const questions = QUIZ_DATABASE[category];
+      if (!questions) return;
+      setCurrentQuiz({ category, questions: [...questions].sort(()=>Math.random()-0.5) });
+      setCurrentQuestion(0); setScore(0); setTimeLeft(30); setShowResult(false); setLastAnswer(null);
+      setCurrentScene('quiz');
+      if (quizTimer) clearInterval(quizTimer);
+      const timer = setInterval(()=> {
+        setTimeLeft(prev => {
+          if (prev <= 1) { clearInterval(timer); nextQuestion(); return 30; }
+          return prev - 1;
+        });
+      }, 1000);
+      setQuizTimer(timer);
+    };
+
+    const answerQuestion = (index) => {
+      if (!currentQuiz) return;
+      const q = currentQuiz.questions[currentQuestion];
+      const isCorrect = index === q.correct;
+      setLastAnswer({ selectedIndex:index, correct:q.correct, isCorrect });
+      if (isCorrect) setScore(prev => prev + 100);
+      if (quizTimer) { clearInterval(quizTimer); setQuizTimer(null); }
+      setShowResult(true);
+      setTimeout(()=> nextQuestion(), 900);
+    };
+
+    const nextQuestion = () => {
+      setShowResult(false); setLastAnswer(null);
+      if (!currentQuiz) return;
+      if (currentQuestion + 1 >= currentQuiz.questions.length) { finishQuiz(); }
+      else {
+        setCurrentQuestion(prev => prev + 1);
+        setTimeLeft(30);
+        if (quizTimer) clearInterval(quizTimer);
+        const timer = setInterval(()=> {
+          setTimeLeft(prev => {
+            if (prev <= 1) { clearInterval(timer); nextQuestion(); return 30; }
+            return prev - 1;
+          });
+        },1000);
+        setQuizTimer(timer);
+      }
+    };
+
+    const finishQuiz = () => {
+      if (quizTimer) { clearInterval(quizTimer); setQuizTimer(null); }
+      const newTotal = (totalScore||0) + (score||0);
+      setTotalScore(newTotal);
+
+      // update scores in localStorage
+      const existing = gameData.find(g => g.player_nis === playerData.nis);
+      let updatedScores = [];
+      if (existing) {
+        updatedScores = gameData.map(g => g.player_nis === playerData.nis ? { ...g, total_score: newTotal, last_played: new Date().toISOString(), selected_avatar: selectedAvatar } : g);
+      } else {
+        updatedScores = [...gameData, {
+          is_user:false,
+          player_nis: playerData.nis,
+          player_name: playerData.name,
+          player_class: playerData.class,
+          school_name: playerData.school,
+          total_score: newTotal,
+          quiz_completed: 1,
+          selected_avatar: selectedAvatar,
+          last_played: new Date().toISOString()
+        }];
+      }
+      saveScores(updatedScores);
+      setGameData(updatedScores);
+
+      // unlock avatars
+      const unlocked = ['student'];
+      Object.entries(AVATAR_SYSTEM.avatars).forEach(([key, data])=>{
+        if (newTotal >= data.requiredScore) unlocked.push(key);
+      });
+      setUnlockedAvatars(Array.from(new Set(unlocked)));
+
+      setCurrentQuiz(null);
+      setCurrentScene('world');
+    };
+
+    /* --------- UI renderers ---------- */
+    if (isLoading) {
+      return (
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-8xl mb-4 bounce-animation">🏰</div>
+            <div className="text-2xl font-bold text-white">Village Quiz Adventure</div>
+            <div className="mt-4 text-white/80">Memuat…</div>
+          </div>
+        </div>
+      );
+    }
+
+    const renderLogin = () => (
+      <div className="h-full flex items-center justify-center village-background p-4">
+        <div className="floating-ui rounded-3xl p-8 max-w-md w-full mx-4">
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-2">🏰</div>
+            <h1 className="text-2xl font-black">{config.game_title}</h1>
+            <p className="text-sm text-gray-600">{config.welcome_message}</p>
+          </div>
+
+          {!showRegister ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <input value={loginNis} onChange={e=>setLoginNis(e.target.value)} placeholder="NIS (4 digit)" maxLength="4" className="w-full px-4 py-3 border-2 rounded-xl" />
+              <input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} placeholder="Password" className="w-full px-4 py-3 border-2 rounded-xl" />
+              {loginError && <div className="p-3 bg-red-100 border border-red-300 rounded-xl text-red-700 text-sm">{loginError}</div>}
+              <button type="submit" className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold">Masuk</button>
+              <button type="button" onClick={()=>{ setShowRegister(true); setLoginError(''); setRegisterError(''); }} className="w-full text-center text-blue-600 font-bold mt-2">Daftar</button>
+              <div className="mt-4 text-xs text-gray-500">Catatan: data tersimpan di browser (localStorage).</div>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-3">
+              <input value={registerData.nis} onChange={e=>setRegisterData(p=>({...p, nis:e.target.value}))} placeholder="NIS (4 digit)" maxLength="4" className="w-full px-4 py-2 border-2 rounded-xl" />
+              <input value={registerData.name} onChange={e=>setRegisterData(p=>({...p, name:e.target.value}))} placeholder="Nama" className="w-full px-4 py-2 border-2 rounded-xl" />
+              <input value={registerData.class} onChange={e=>setRegisterData(p=>({...p, class:e.target.value}))} placeholder="Kelas" className="w-full px-4 py-2 border-2 rounded-xl" />
+              <input value={registerData.school} onChange={e=>setRegisterData(p=>({...p, school:e.target.value}))} placeholder="Sekolah" className="w-full px-4 py-2 border-2 rounded-xl" />
+              <input type="password" value={registerData.password} onChange={e=>setRegisterData(p=>({...p, password:e.target.value}))} placeholder="Password" className="w-full px-4 py-2 border-2 rounded-xl" />
+              <input type="password" value={registerData.confirmPassword} onChange={e=>setRegisterData(p=>({...p, confirmPassword:e.target.value}))} placeholder="Konfirmasi Password" className="w-full px-4 py-2 border-2 rounded-xl" />
+              {registerError && <div className="p-3 bg-red-100 border border-red-300 rounded-xl text-red-700 text-sm">{registerError}</div>}
+              <button type="submit" className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold">Daftar</button>
+              <button type="button" onClick={()=>{ setShowRegister(false); setRegisterError(''); }} className="w-full text-blue-600 font-bold">Kembali</button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+
+    const renderHome = () => (
+      <div className="h-full flex items-center justify-center village-background p-6">
+        <div className="floating-ui rounded-2xl p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-2">🏰</div>
+            <h1 className="text-2xl font-black">{config.game_title}</h1>
+            <p className="text-sm text-gray-600 mt-1">Selamat datang, {playerData.name}!</p>
+          </div>
+
+          <button onClick={()=>setCurrentScene('world')} className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold mb-4">Mulai Petualangan</button>
+
+          <div className="flex gap-3 mb-4">
+            <button onClick={()=>setCurrentScene('leaderboard')} className="flex-1 py-3 bg-purple-500 text-white rounded-xl font-bold">🏆 Leaderboard</button>
+            <button onClick={()=>setCurrentScene('wardrobe')} className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold">👤 Wardrobe</button>
+          </div>
+
+          {totalScore > 0 && (
+            <div className="mt-4 p-4 bg-yellow-100 rounded-xl text-center">
+              <div className="text-sm text-gray-600">Total Skor</div>
+              <div className="text-3xl font-black text-orange-600">{totalScore}</div>
+            </div>
+          )}
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button onClick={()=>{
+              setCurrentScene('login');
+              setPlayerData({ nis:'', name:'', class:'', school:'', password:'' });
+              setTotalScore(0); setScore(0);
+              setUnlockedAvatars(['student']); setSelectedAvatar('student');
+            }} className="py-2 bg-gray-500 text-white rounded-xl font-bold">Logout</button>
+
+            <button onClick={()=>{ if(confirm('Reset semua data lokal?')) resetAllData(); }} className="py-2 bg-red-500 text-white rounded-xl font-bold">Reset Data</button>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderWorld = () => (
+      <div className="h-full relative game-world">
+        <div className="absolute top-4 left-4 right-4 z-10">
+          <div className="flex justify-between">
+            <div className="floating-ui rounded-xl p-3">
+              <div className="font-bold">{playerData.name}</div>
+              <div className="text-sm text-blue-600">⭐ Total: {totalScore}</div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={()=>setCurrentScene('wardrobe')} className="floating-ui p-3 rounded-xl">👤</button>
+              <button onClick={()=>setCurrentScene('leaderboard')} className="floating-ui p-3 rounded-xl">🏆</button>
+              <button onClick={()=>setCurrentScene('home')} className="floating-ui p-3 rounded-xl">🏠</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="floating-ui rounded-xl p-3 text-center">
+            {nearHouse ? <span className="text-blue-700 font-bold">Tekan ENTER - {nearHouse.name}</span> : <span>Gunakan WASD atau joystick (mobile) untuk bergerak</span>}
+          </div>
+        </div>
+
+        {/* Joystick (mobile) */}
+        <Joystick onMove={(keys)=>setPressedKeys(keys)} />
+
+        {/* Houses */}
+        {HOUSE_ZONES.map(h => (
+          <div key={h.id} className={`absolute house-zone ${nearHouse?.id===h.id ? 'active' : ''}`} style={{ left:`${h.x}%`, top:`${h.y}%`, transform:'translate(-50%,-50%)' }}>
+            <img src={ASSETS.houses[h.house]} alt={h.name} className="w-24 h-24" />
+            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-sm font-bold text-center whitespace-nowrap bg-white px-3 py-1 rounded-lg shadow">{h.name}</div>
+          </div>
+        ))}
+
+        {/* Character */}
+        <div className="character-sprite" style={{ left:`${playerPosition.x}%`, top:`${playerPosition.y}%`, transform:'translate(-50%,-50%)' }}>
+          <div className="character-sprite-container">
+            <div className="character-shadow"></div>
+            <img src={AVATAR_SYSTEM.avatars[selectedAvatar].base} alt="Player" />
+          </div>
+        </div>
+
+        {/* Quick action for mobile */}
+        {nearHouse && (
+          <div className="absolute bottom-20 right-4 z-10 md:hidden">
+            <button onClick={()=>startQuiz(nearHouse.category)} className="w-16 h-16 bg-green-500 rounded-full shadow-lg flex items-center justify-center text-3xl">✅</button>
+          </div>
+        )}
+      </div>
+    );
+
+    const renderQuiz = () => {
+      if (!currentQuiz) return null;
+      const q = currentQuiz.questions[currentQuestion];
+      const progress = ((currentQuestion + 1) / currentQuiz.questions.length) * 100;
+      return (
+        <div className="h-full flex items-center justify-center village-background p-4">
+          <div className="floating-ui rounded-2xl p-6 max-w-3xl w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-black">Quiz {currentQuiz.category}</h2>
+              <div className="text-xl font-bold text-orange-500">⏱ {timeLeft}s</div>
+            </div>
+
+            <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" style={{ width: `${progress}%` }}></div>
+            </div>
+            <div className="text-sm text-gray-600 mb-4">Soal {currentQuestion+1} dari {currentQuiz.questions.length}</div>
+
+            <div className="mb-4 p-4 bg-blue-50 rounded-xl">
+              <h3 className="text-xl font-bold">{q.question}</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {q.options.map((opt, idx) => {
+                let cls = "p-4 text-left border-2 rounded-xl cursor-pointer";
+                if (showResult && lastAnswer) {
+                  if (idx === lastAnswer.correct) cls += " border-green-500 bg-green-100 answer-correct";
+                  else if (idx === lastAnswer.selectedIndex && !lastAnswer.isCorrect) cls += " border-red-500 bg-red-100 answer-wrong";
+                  else cls += " border-gray-200";
+                } else cls += " border-gray-300 hover:border-blue-500 hover:bg-blue-50";
+                return (
+                  <button key={idx} onClick={()=>!showResult && answerQuestion(idx)} disabled={showResult} className={cls}>
+                    <div className="font-bold text-blue-600 mb-1">{String.fromCharCode(65+idx)}.</div>
+                    <div className="font-semibold">{opt}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {showResult && lastAnswer && (
+              <div className="mt-4 text-center p-3 rounded-xl bg-yellow-100">
+                <div className={`text-xl font-bold ${lastAnswer.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                  {lastAnswer.isCorrect ? `🎉 Benar! +100` : `❌ Salah!`}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    const renderWardrobe = () => (
+      <div className="h-full village-background p-4 overflow-y-auto">
+        <div className="max-w-4xl mx-auto">
+          <div className="floating-ui rounded-2xl p-6 mb-6 flex justify-between items-center">
+            <h2 className="text-2xl font-black">👤 Pilih Avatar</h2>
+            <button onClick={()=>setCurrentScene('world')} className="px-4 py-2 bg-gray-500 text-white rounded-xl font-bold">← Kembali</button>
+          </div>
+
+          <div className="floating-ui rounded-2xl p-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {Object.entries(AVATAR_SYSTEM.avatars).map(([key,data])=>{
+                const isUnlocked = unlockedAvatars.includes(key);
+                const isSelected = selectedAvatar === key;
+                return (
+                  <div key={key} onClick={()=>isUnlocked && setSelectedAvatar(key)} className={`p-4 rounded-xl border-2 cursor-pointer ${isSelected ? 'border-green-500 bg-green-100' : isUnlocked ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-100 opacity-60'}`}>
+                    <div className="flex justify-center mb-2">
+                      {isUnlocked ? <img src={data.base} alt={data.name} className="w-16 h-16" /> : <div className="w-16 h-16 bg-gray-300 rounded-xl flex items-center justify-center">🔒</div>}
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold">{data.name}</div>
+                      <div className="text-xs text-gray-600">Skor: {data.requiredScore}</div>
+                      {isSelected && <div className="text-xs bg-green-500 text-white px-2 py-1 rounded-full mt-1 inline-block">✓ Dipilih</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderLeaderboard = () => {
+      const playerScores = new Map();
+      gameData.filter(d => d.is_user === false || d.player_nis).forEach(entry => {
+        const existing = playerScores.get(entry.player_nis);
+        if (!existing || (entry.total_score||0) > (existing.total_score||0)) playerScores.set(entry.player_nis, entry);
+      });
+      const sorted = Array.from(playerScores.values()).sort((a,b)=> (b.total_score||0) - (a.total_score||0));
+      return (
+        <div className="h-full village-background p-4 overflow-y-auto">
+          <div className="max-w-3xl mx-auto">
+            <div className="floating-ui rounded-2xl p-6 mb-6 flex justify-between items-center">
+              <h2 className="text-2xl font-black">🏆 Leaderboard</h2>
+              <button onClick={()=>setCurrentScene('home')} className="px-4 py-2 bg-gray-500 text-white rounded-xl font-bold">← Kembali</button>
+            </div>
+
+            <div className="floating-ui rounded-2xl p-6">
+              <div className="space-y-3">
+                {sorted.length>0 ? sorted.slice(0,20).map((entry, idx) => (
+                  <div key={entry.player_nis} className={`flex justify-between items-center p-4 rounded-xl ${idx<3 ? 'bg-yellow-100 border-2 border-yellow-400' : 'bg-gray-50'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-xl">{idx<3 ? ['🥇','🥈','🥉'][idx] : `#${idx+1}`}</span>
+                      <div>
+                        <div className="font-bold">{entry.player_name}</div>
+                        <div className="text-sm text-gray-600">Kelas {entry.player_class} — {entry.school_name || ''}</div>
+                      </div>
+                    </div>
+                    <div className="font-bold text-xl text-blue-600">{entry.total_score}</div>
+                  </div>
+                )) : <div className="text-center text-gray-500 py-8">Belum ada data</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="h-full">
+        {currentScene === 'login' && renderLogin()}
+        {currentScene === 'home' && renderHome()}
+        {currentScene === 'world' && renderWorld()}
+        {currentScene === 'quiz' && renderQuiz()}
+        {currentScene === 'wardrobe' && renderWardrobe()}
+        {currentScene === 'leaderboard' && renderLeaderboard()}
+      </div>
+    );
+  }
+
+  /* ===========================
+     Joystick (mobile)
+     =========================== */
+  function Joystick({ onMove }) {
+    const ref = useRef(null);
+    const [dragging, setDragging] = useState(false);
+    const [pos, setPos] = useState({ x:0, y:0 });
+
+    useEffect(()=> {
+      const handleTouchMove = (e) => {
+        if (!dragging || !ref.current) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        const rect = ref.current.getBoundingClientRect();
+        const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+        let dx = t.clientX - cx, dy = t.clientY - cy;
+        const dist = Math.hypot(dx,dy); const max = 40;
+        if (dist > max) { dx = dx/dist*max; dy = dy/dist*max; }
+        setPos({ x:dx, y:dy });
+        const keys = new Set();
+        const threshold = 12;
+        if (dy < -threshold) keys.add('up');
+        if (dy > threshold) keys.add('down');
+        if (dx < -threshold) keys.add('left');
+        if (dx > threshold) keys.add('right');
+        onMove(keys);
+      };
+      const handleTouchEnd = () => { setDragging(false); setPos({x:0,y:0}); onMove(new Set()); };
+      if (dragging) {
+        document.addEventListener('touchmove', handleTouchMove, { passive:false });
+        document.addEventListener('touchend', handleTouchEnd);
+      }
+      return () => {
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+      };
+    }, [dragging, onMove]);
+
+    return (
+      <div className="absolute bottom-20 left-4 z-10 md:hidden">
+        <div ref={ref} onTouchStart={()=>setDragging(true)} className="relative w-32 h-32 bg-white/30 rounded-full shadow-lg flex items-center justify-center">
+          <div className="absolute w-24 h-24 bg-white/20 rounded-full"></div>
+          <div className="absolute w-12 h-12 bg-blue-500 rounded-full shadow-lg" style={{ transform:`translate(${pos.x}px, ${pos.y}px)`, transition: dragging ? 'none' : 'transform .2s ease-out' }}></div>
+        </div>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<VillageQuizGame />);
+  </script>
+</body>
+</html>
